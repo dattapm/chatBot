@@ -7,8 +7,13 @@ class ChatBot(object):
      status = '200 OK'
      output = 'Hello World!'
 
-     response_headers = [('Content-type', 'text/plain'),
-                        ('Content-Length', str(len(output)))]
+     response_headers = [
+      ('Access-Control-Allow-Origin', '*'),
+      ('Access-Control-Allow-Headers', 'Content-Type'),
+      ('Access-Control-Allow-Methods', 'GET, POST'),
+      ('Content-Type', 'text/plain'),
+      ('Content-Length', str(len(output)))
+     ]
 
      start_response(status, response_headers)
 
@@ -17,13 +22,10 @@ class ChatBot(object):
   def __del__(self):
     print "in del"
 
-#application = ChatBot()
-
-
 def main():
   application()
 
 if __name__ == "__main__":
-  application()
+  main()
 
 
