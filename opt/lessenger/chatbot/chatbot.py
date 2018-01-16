@@ -1,14 +1,21 @@
 from string import Template
 import urllib2
+import urllib
 import json
 import cgi
-from cStringIO import StringIO
-#from cgi import parse_qs, escape
 
 class ChatBot(object):
 
   def __init__(self):
     print "CHATBOT IS ENABLED"
+
+    self.SERVER_URL = "http://localhost:9000"
+    self.HEADERS = [
+           ('Access-Control-Allow-Origin', '*'),
+           ('Access-Control-Allow-Headers', 'Content-Type'),
+           ('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'),
+           ('Content-Type', 'text/plain'),
+         ]
 
     self.json_response = """
         {
@@ -35,51 +42,67 @@ class ChatBot(object):
     # in the file like wsgi.input environment variable.
 
     content_type = environ['CONTENT_TYPE']
+    user_input_dict = {}
     if content_type:
       content_type_value, content_type_dict = cgi.parse_header(content_type)
       if content_type_value == 'multipart/form-data':
-        fp = environ['wsgi.input']
         user_input_dict = cgi.parse_multipart(environ['wsgi.input'], content_type_dict)
+      elif content_type_value == 'application/json':
+        try:
+          request_body_size = int(environ.get('CONTENT_LENGTH', 0))
+        except (ValueError):
+          request_body_size = 0
+
+        # When the method is POST the variable will be sent
+        # in the HTTP request body which is passed by the WSGI server
+        # in the file like wsgi.input environment variable.
+        request_body = environ['wsgi.input'].read(request_body_size)
+        request_body = cgi.parse_qs(request_body)
+        user_input_dict = json.loads(request_body["json"][0])
+
 
     return user_input_dict
 
   def ProcessClientRequest(self, environ):
 
-    user_input_dict = self.GetFormData(environ)
+    input_dict = self.GetFormData(environ)
 
-    print user_input_dict.get("action")
     # Based on the action type, call the apropriate API
-    if user_input_dict.get("action")[0] == "join":
+    if input_dict.get("action")[0] == "join":
        # Call the /Welcome API
-       print "IN WELCOME API"
-    elif user_input_dict.get("action")[0] == "message":
+       input_data = {
+                      'name' : "%s" %(input_dict["name"][0]),
+                      'action' : "%s" %(input_dict["action"][0]),
+                      'user_id' : "%s" %(input_dict["user_id"][0])
+                   }
+
+       data = urllib.urlencode({"json": json.dumps(input_data)})
+
+       url = self.SERVER_URL + "/Welcome"
+       headers = {
+                   'Content-Type': 'application/json'
+                 }
+       req = urllib2.Request(url, data, headers)
+       response = urllib2.urlopen(req)
+       rsp_from_welcome_api = json.loads(cgi.parse_qs(response.read())["json"][0])["message"]
+
+       return rsp_from_welcome_api
+
+    elif input_dict.get("action")[0] == "message":
        print "IN MESSAGE API"
 
   def __call__(self, environ, start_response):
      status = '200 OK'
-     output = 'Hello World!'
-
-     response_headers = [
-           ('Access-Control-Allow-Origin', '*'),
-           ('Access-Control-Allow-Headers', 'Content-Type'),
-           ('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'),
-           ('Content-Type', 'text/plain'),
-         ]
-
-
 
      # Retrieve user input from POST request.
-     output_new = self.ProcessClientRequest(environ)
-
+     output = self.ProcessClientRequest(environ)
+    
      rsp_msg_local = self.rsp_msg_template.substitute(TYPE="text",
-                                             FORMAT="text",
-                                             OUTPUT_MESSAGE=output)
-
+                                                      FORMAT="text",
+                                                      OUTPUT_MESSAGE=output.encode('utf-8'))
      json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local)
-
-     response_headers.append(('Content-Length',str(len(json_rsp_local))))
-
-     start_response(status, response_headers)
+     self.HEADERS.append(('Content-Length',str(len(json_rsp_local))))
+     start_response(status, self.HEADERS)
 
      return [json_rsp_local]
 
