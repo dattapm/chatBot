@@ -89,7 +89,46 @@ class ChatBot(object):
        return rsp_from_welcome_api
 
     elif input_dict.get("action")[0] == "message":
+       # Extract the city information from the query.
+       import re
+
        print "IN MESSAGE API"
+       user_location = input_dict["text"][0]
+
+       """ 
+       weather in <Location>
+       <Location> weather
+       """
+
+       match = re.search(r'what\'s\s+the\s+weather\s+in\s+([a-zA-Z0-9 ]*.*)',user_location, re.IGNORECASE)
+
+       print "DATTA: MSG API 1", match
+       if match:
+         matches = match.groups()
+         
+         # pick up the first one in case of multiple inputs
+         location = matches[0] 
+       else:
+         print "USER DIDN'T PROVIDE ANY VALID INPUT"
+
+       print "DATTA: MSG API 2", matches, location
+       input_data = {
+                      'location' : "%s" %(location),
+                      'action' : "%s" %(input_dict["action"][0]),
+                      'user_id' : "%s" %(input_dict["user_id"][0])
+                    }
+       print "DATTA: MSG API 3", input_data
+       data = urllib.urlencode({"json": json.dumps(input_data)})
+
+       url = self.SERVER_URL + "/Weather"
+       headers = {
+                   'Content-Type': 'application/json'
+                 }
+       req = urllib2.Request(url, data, headers)
+       response = urllib2.urlopen(req)
+       rsp_from_weather_api = json.loads(cgi.parse_qs(response.read())["json"][0])["message"]
+
+       return rsp_from_weather_api
 
   def __call__(self, environ, start_response):
      status = '200 OK'
