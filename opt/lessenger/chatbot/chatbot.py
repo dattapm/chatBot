@@ -1,16 +1,15 @@
-from string import Template
-import urllib2
-import urllib
-import json
-import cgi
+import re
 
-class ChatBot(object):
+from common.base import Base
+from string import Template
+from common import exceptions
+
+class ChatBot(Base):
 
   def __init__(self):
-    print "CHATBOT IS ENABLED"
+    Base.__init__(self)
 
-    self.SERVER_URL = "http://localhost:9000"
-    self.HEADERS = [
+    self.ui_headers = [
            ('Access-Control-Allow-Origin', '*'),
            ('Access-Control-Allow-Headers', 'Content-Type'),
            ('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'),
@@ -35,118 +34,105 @@ class ChatBot(object):
     self.json_response_template = Template(self.json_response)
     self.rsp_msg_template = Template(self.rsp_msg)
 
-
-  def GetFormData(self, environ):
-    # When the method is POST the variable will be sent
-    # in the HTTP request body which is passed by the WSGI server
-    # in the file like wsgi.input environment variable.
-
-    content_type = environ['CONTENT_TYPE']
-    user_input_dict = {}
-    if content_type:
-      content_type_value, content_type_dict = cgi.parse_header(content_type)
-      if content_type_value == 'multipart/form-data':
-        user_input_dict = cgi.parse_multipart(environ['wsgi.input'], content_type_dict)
-      elif content_type_value == 'application/json':
-        try:
-          request_body_size = int(environ.get('CONTENT_LENGTH', 0))
-        except (ValueError):
-          request_body_size = 0
-
-        # When the method is POST the variable will be sent
-        # in the HTTP request body which is passed by the WSGI server
-        # in the file like wsgi.input environment variable.
-        request_body = environ['wsgi.input'].read(request_body_size)
-        request_body = cgi.parse_qs(request_body)
-        user_input_dict = json.loads(request_body["json"][0])
-
-
-    return user_input_dict
-
   def ProcessClientRequest(self, environ):
 
     input_dict = self.GetFormData(environ)
+    if input_dict:
+      if input_dict.get("action"): 
+        # Based on the action type, call the appropriate API.
+        if input_dict.get("action")[0] == "join":
+           # Call the "/Welcome" API.
 
-    # Based on the action type, call the apropriate API
-    if input_dict.get("action")[0] == "join":
-       # Call the /Welcome API
-       input_data = {
-                      'name' : "%s" %(input_dict["name"][0]),
-                      'action' : "%s" %(input_dict["action"][0]),
-                      'user_id' : "%s" %(input_dict["user_id"][0])
-                   }
+           name =  input_dict.get("name")[0] if input_dict.get("name") else None
+           action = input_dict.get("action")[0] if input_dict.get("action") else None
+           user_id = input_dict.get("user_id")[0] if input_dict.get("user_id") else None
 
-       data = urllib.urlencode({"json": json.dumps(input_data)})
+           if not name or not action or not user_id:
+	     raise exceptions.BadQueryException("'join' action item should have 'name', 'action' and 'user_id' information.")
 
-       url = self.SERVER_URL + "/Welcome"
-       headers = {
-                   'Content-Type': 'application/json'
-                 }
-       req = urllib2.Request(url, data, headers)
-       response = urllib2.urlopen(req)
-       rsp_from_welcome_api = json.loads(cgi.parse_qs(response.read())["json"][0])["message"]
+           input_data = {
+                          "name" : name,
+                          "action" : action,
+                          "user_id" : user_id
+                        }
 
-       return rsp_from_welcome_api
+           response = self.GetHTTPResponse(input_data, "/Welcome")
+           rsp_from_api = response["message"]
 
-    elif input_dict.get("action")[0] == "message":
-       # Extract the city information from the query.
-       import re
+           return rsp_from_api
 
-       print "IN MESSAGE API"
-       user_location = input_dict["text"][0]
+        elif input_dict.get("action")[0] == "message":
+           # Extract the city information from the query.
 
-       """ 
-       weather in <Location>
-       <Location> weather
-       """
+           text = input_dict.get("text")[0] if input_dict.get("text") else None
+           action = input_dict.get("action")[0] if input_dict.get("action") else None
+           user_id = input_dict.get("user_id")[0] if input_dict.get("user_id") else None
 
-       match = re.search(r'what\'s\s+the\s+weather\s+in\s+([a-zA-Z0-9 ]*.*)',user_location, re.IGNORECASE)
+           if not text or not action or not user_id:
+	     raise exceptions.BadQueryException("'message' action item should have 'text', 'action' and 'user_id' information.")
 
-       print "DATTA: MSG API 1", match
-       if match:
-         matches = match.groups()
-         
-         # pick up the first one in case of multiple inputs
-         location = matches[0] 
-       else:
-         print "USER DIDN'T PROVIDE ANY VALID INPUT"
+           """ 
+           weather in <Location>
+           <Location> weather
+           """ 
 
-       print "DATTA: MSG API 2", matches, location
-       input_data = {
-                      'location' : "%s" %(location),
-                      'action' : "%s" %(input_dict["action"][0]),
-                      'user_id' : "%s" %(input_dict["user_id"][0])
-                    }
-       print "DATTA: MSG API 3", input_data
-       data = urllib.urlencode({"json": json.dumps(input_data)})
+           match = re.search(r'what\'s\s+the\s+weather\s+in\s+([a-zA-Z0-9 ]*.*)', text, re.IGNORECASE)
 
-       url = self.SERVER_URL + "/Weather"
-       headers = {
-                   'Content-Type': 'application/json'
-                 }
-       req = urllib2.Request(url, data, headers)
-       response = urllib2.urlopen(req)
-       rsp_from_weather_api = json.loads(cgi.parse_qs(response.read())["json"][0])["message"]
+           if match:
+             matches = match.groups()
+             # pick up the first one in case of multiple inputs
+             location = matches[0] 
+  
+           if not match or not location:
+	     raise exceptions.BadQueryException("Please enter valid city /country name of zip code.")
 
-       return rsp_from_weather_api
+           # Check if location is valid here.
+           input_data = {
+                          "location" : location,
+                          "action" : action,
+                          "user_id" : user_id
+                        }
+
+           response = self.GetHTTPResponse(input_data, "/Weather")
+           rsp_from_api = response["message"]
+
+           return rsp_from_api
+        else:
+          raise exceptions.BadQueryException("'action' should be either 'join' or 'message'.")
+      else:
+        raise exceptions.BadQueryException("Valid 'action' not received from lessenger UI.")
+    else:
+      raise exceptions.BadQueryException("Valid input's not received from lessenger UI.")
 
   def __call__(self, environ, start_response):
-     status = '200 OK'
 
-     # Retrieve user input from POST request.
-     output = self.ProcessClientRequest(environ)
-    
-     rsp_msg_local = self.rsp_msg_template.substitute(TYPE="text",
-                                                      FORMAT="text",
-                                                      OUTPUT_MESSAGE=output.encode('utf-8'))
-     json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local)
-     self.HEADERS.append(('Content-Length',str(len(json_rsp_local))))
-     start_response(status, self.HEADERS)
-
-     return [json_rsp_local]
+    try:
+      # Retrieve user input from POST request.
+      status = '200 OK'
+      output = self.ProcessClientRequest(environ)
+      rsp_msg_local = self.rsp_msg_template.substitute(
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE=output.encode('utf-8'))
+    except exceptions.BadQueryException as e:
+      status = "400 Bad Request"
+      rsp_msg_local = self.rsp_msg_template.substitute(
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+      print "IN BAD QUERY EXCEPTION"
+    except exceptions.HTTPRequestException as e:
+      status = "400 Bad Request"
+      rsp_msg_local = self.rsp_msg_template.substitute(
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+    except exceptions.UnsupportedMediaTypeException as e:
+      status = "415 Unsupported Media Type"
+      rsp_msg_local = self.rsp_msg_template.substitute(
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+      
+    json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local)
+    self.ui_headers.append(('Content-Length',str(len(json_rsp_local))))
+    start_response(status, self.ui_headers)
+    return [json_rsp_local]
 
   def __del__(self):
-    print "CHATBOT IS DISABLED"
+    pass
 
 def main():
   application = ChatBot() 
