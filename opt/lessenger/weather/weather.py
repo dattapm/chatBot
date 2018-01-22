@@ -16,7 +16,7 @@ class Weather(Base):
     self.datasky_api_key = "8b4d5ca925446f9db4f7d7d0aac8b40c"
 
   def ProcessClientRequest(self, environ):
-    form_data = self.GetFormData(environ)
+    form_data = self.GetFormData(environ, "/Weather")
 
     # Call the Google Geocoding API.
 

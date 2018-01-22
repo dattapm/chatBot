@@ -37,12 +37,14 @@ class ChatBot(Base):
   def ProcessClientRequest(self, environ):
 
     input_dict = self.GetFormData(environ)
+    api_name = ""
     if input_dict:
       if input_dict.get("action"): 
         # Based on the action type, call the appropriate API.
         if input_dict.get("action")[0] == "join":
            # Call the "/Welcome" API.
 
+           api_name = "/Welcome"
            name =  input_dict.get("name")[0] if input_dict.get("name") else None
            action = input_dict.get("action")[0] if input_dict.get("action") else None
            user_id = input_dict.get("user_id")[0] if input_dict.get("user_id") else None
@@ -55,15 +57,10 @@ class ChatBot(Base):
                           "action" : action,
                           "user_id" : user_id
                         }
-
-           response = self.GetHTTPResponse(input_data, "/Welcome")
-           rsp_from_api = response["message"]
-
-           return rsp_from_api
-
         elif input_dict.get("action")[0] == "message":
            # Extract the city information from the query.
 
+           api_name = "/Weather"
            text = input_dict.get("text")[0] if input_dict.get("text") else None
            action = input_dict.get("action")[0] if input_dict.get("action") else None
            user_id = input_dict.get("user_id")[0] if input_dict.get("user_id") else None
@@ -92,43 +89,42 @@ class ChatBot(Base):
                           "action" : action,
                           "user_id" : user_id
                         }
-
-           response = self.GetHTTPResponse(input_data, "/Weather")
-           rsp_from_api = response["message"]
-
-           return rsp_from_api
         else:
           raise exceptions.BadQueryException("'action' should be either 'join' or 'message'.")
+
+        # Send a HTTP request to the API.
+        return self.GetHTTPResponse(input_data, api_name)
       else:
         raise exceptions.BadQueryException("Valid 'action' not received from lessenger UI.")
     else:
       raise exceptions.BadQueryException("Valid input's not received from lessenger UI.")
 
-  def __call__(self, environ, start_response):
 
+  def __call__(self, environ, start_response):
     try:
       # Retrieve user input from POST request.
-      status = '200 OK'
+      status = "200 OK"
       output = self.ProcessClientRequest(environ)
       rsp_msg_local = self.rsp_msg_template.substitute(
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE=output.encode('utf-8'))
-    except exceptions.BadQueryException as e:
+    except (exceptions.BadQueryException, exceptions.HTTPRequestException) as e:
       status = "400 Bad Request"
       rsp_msg_local = self.rsp_msg_template.substitute(
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
       print "IN BAD QUERY EXCEPTION"
-    except exceptions.HTTPRequestException as e:
-      status = "400 Bad Request"
-      rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
     except exceptions.UnsupportedMediaTypeException as e:
       status = "415 Unsupported Media Type"
       rsp_msg_local = self.rsp_msg_template.substitute(
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
-      
+    except exceptions.InvalidJSONFromAPIException as e:
+      status = "204 No Content"
+      rsp_msg_local = self.rsp_msg_template.substitute(
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+
     json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local)
     self.ui_headers.append(('Content-Length',str(len(json_rsp_local))))
     start_response(status, self.ui_headers)
+
     return [json_rsp_local]
 
   def __del__(self):

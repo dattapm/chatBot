@@ -5,31 +5,34 @@ from common.base import Base
 from common import exceptions
 
 class Welcome(Base):
-
   def __init__(self):
     pass
 
   def ProcessClientRequest(self, environ):
-    form_data = self.GetFormData(environ)
+    form_data = self.GetFormData(environ, "/Welcome")
+    name = form_data.get("name")
+    if not name:
+      raise exceptions.BadQueryException("'name' parameter not available in the welcome request.")
 
-    return form_data["name"]
+    return name
 
   def __call__(self, environ, start_response):
-
+    response = ""
     try:
       status = "200 OK"
       # Retrieve user input from POST request.
       output = self.ProcessClientRequest(environ)
       output = "Hello, %s!" %(output)
-      response = {
-                   "message" : output
-                 }
-    except exceptions.InvalidJSONResponseException as e:
-      print "WELCOME API: JSON EXP"
+    except exceptions.InvalidJSONFromAPIException as e:
+      status = "204 No Content"
+      output = e.message
+    except exceptions.BadQueryException as e:
       status = "400 Bad Request"
-      response = {
-                   "message" : e
-                 }
+      output = e.message
+
+    response = {
+                 "message": output
+               }
 
     json_rsp_local = urllib.urlencode({"json": json.dumps(response)})
     headers = [
@@ -37,7 +40,6 @@ class Welcome(Base):
                 ('Content-Length', '%s' %(str(len(json_rsp_local))))
               ]
     start_response(status, headers)
-
     return [json_rsp_local]
 
   def __del__(self):
@@ -49,5 +51,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-

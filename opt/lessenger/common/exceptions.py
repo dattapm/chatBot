@@ -68,11 +68,11 @@ class BadQueryException(Error):
     return self.ToString("BadQueryException")
 
 # Invalid JSON request received by APIs.
-class InvalidJSONResponseException(Error):
-  """InvalidJSONResponseException error."""
+class InvalidJSONFromAPIException(Error):
+  """InvalidJSONFromAPIException error."""
 
   def __str__(self):
-    return self.ToString("InvalidJSONResponseException")
+    return self.ToString("InvalidJSONFromAPIException")
 
 # HTTPRequestException errors.
 class HTTPRequestException(Error):
