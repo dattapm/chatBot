@@ -33,6 +33,11 @@ class ChatBot(Base):
 
     self.json_response_template = Template(self.json_response)
     self.rsp_msg_template = Template(self.rsp_msg)
+    self.pattern_strings = [
+        r"\s*what\'s\s+the\s+weather\s+in\s+([a-zA-Z0-9 ]*.*)\s*",
+        r"\s*weather\s+in\s+([a-zA-Z0-9 ]*.*)\s*",
+        r"\s*([a-zA-Z0-9 ]*.*)weather\s*"
+        ]
 
   def ProcessClientRequest(self, environ):
 
@@ -68,20 +73,31 @@ class ChatBot(Base):
            if not text or not action or not user_id:
 	     raise exceptions.BadQueryException("'message' action item should have 'text', 'action' and 'user_id' information.")
 
-           """ 
-           weather in <Location>
-           <Location> weather
-           """ 
-
-           match = re.search(r'what\'s\s+the\s+weather\s+in\s+([a-zA-Z0-9 ]*.*)', text, re.IGNORECASE)
-
+           match = re.search(self.pattern_strings[0], text, re.IGNORECASE)
            if match:
              matches = match.groups()
              # pick up the first one in case of multiple inputs
              location = matches[0] 
-  
+           else:
+             match = re.search(self.pattern_strings[1], text, re.IGNORECASE)
+             if match:
+               matches = match.groups()
+               # pick up the first one in case of multiple inputs
+               location = matches[0]
+             else: 
+               match = re.search(self.pattern_strings[2], text, re.IGNORECASE)
+               if match:
+                 matches = match.groups()
+                 # pick up the first one in case of multiple inputs
+                 location = matches[0]
+              
            if not match or not location:
-	     raise exceptions.BadQueryException("Please enter valid city /country name of zip code.")
+	     raise exceptions.BadQueryException("Please enter valid city/ country name or zip code."
+                                                " "
+                                                "Usage is:"
+                                                " what's the weather in <Location>"
+                                                " weather in <Location>"
+                                                " <Location> weather")
 
            # Check if location is valid here.
            input_data = {
@@ -110,7 +126,7 @@ class ChatBot(Base):
     except (exceptions.BadQueryException, exceptions.HTTPRequestException) as e:
       status = "400 Bad Request"
       rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e.message)
     except exceptions.UnsupportedMediaTypeException as e:
       status = "415 Unsupported Media Type"
       rsp_msg_local = self.rsp_msg_template.substitute(
@@ -125,6 +141,7 @@ class ChatBot(Base):
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
 
     json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local)
+
     self.ui_headers.append(('Content-Length',str(len(json_rsp_local))))
     start_response(status, self.ui_headers)
 
@@ -139,5 +156,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-

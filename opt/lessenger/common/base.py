@@ -2,6 +2,8 @@ import cgi
 import json
 import urllib
 import urllib2
+import logging
+import logging.config
 
 from common import exceptions
 
@@ -13,6 +15,9 @@ class Base(object):
                         'Content-Type': 'application/json'
                        }
 
+    #logging.config.fileConfig("/opt/lessenger/conf/logging.conf", disable_existing_loggers=False)
+    #self.logger = logging.getLogger("lessenger_ui")
+
   def GetFormData(self, environ, api_name=None):
       # When the method is POST the variable will be sent
       # in the HTTP request body which is passed by the WSGI server
@@ -23,6 +28,7 @@ class Base(object):
       content_type = environ.get("CONTENT_TYPE")
       if content_type:
         content_type_value, content_type_dict = cgi.parse_header(content_type)
+        #self.logger.info("Content-Type is %s",content_type_value)
         if content_type_value == "multipart/form-data":
           form_data = cgi.parse_multipart(environ["wsgi.input"], content_type_dict)
         elif content_type_value == "application/json":
