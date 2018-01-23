@@ -27,17 +27,6 @@ def HtmlEscape(text):
   return saxutils.escape(text, _HTML_ESCAPE_TABLE)
 
 
-def FormatException(exc_info):
-  """Gets information from exception info tuple.
-
-  Args:
-    exc_info: exception info tuple (type, value, traceback)
-  Returns:
-    exception description in a list - wsgi application response format.
-  """
-  return [cgitb.handler(exc_info)]
-
-
 class Error(Exception):
   """Generic error."""
 
@@ -87,6 +76,21 @@ class UnsupportedMediaTypeException(Error):
 
   def __str__(self):
     return self.ToString("UnsupportedMediaTypeException")
+
+# ServerNotAvailableException errors.
+class ServerNotAvailableException(Error):
+  """ServerNotAvailableException error."""
+
+  def __str__(self):
+    return self.ToString("ServerNotAvailableException")
+
+# Some unknown errors.
+class UnknownException(Error):
+  """UnknownException error."""
+
+  def __str__(self):
+    return self.ToString("UnknownException")
+
 
 def main():
   pass

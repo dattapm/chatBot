@@ -50,6 +50,7 @@ class Base(object):
       url = self.server_url + api_name
       request = urllib2.Request(url, data, self.api_headers)
       response = urllib2.urlopen(request)
+
       if response.getcode() == 204:
         raise exceptions.InvalidJSONFromAPIException("Invalid JSON message received by '%s' API." %(api_name))
       elif response.getcode() == 200:
@@ -61,14 +62,29 @@ class Base(object):
           raise exceptions.InvalidJSONFromAPIException("Invalid response received from %s API." %(api_name))
 
         return response_from_api
-    except urllib2.HTTPError as e:
+    except urllib2.URLError as e:
+      if hasattr(e, "code"):  # HTTPError
+        if e.code == 500:
+          raise exceptions.ServerNotAvailableException(e.message)
+      elif hasattr(e, "reason"):  # URLError
+        raise exceptions.UnknownException(e.reason)
+
       response = json.loads(cgi.parse_qs(e.read())["json"][0])
       raise exceptions.BadQueryException(response.get("message"))
-    #except urllib2.URLError as e:
-    #  print "DATTA: IN URL ERROR"
-    #except Exception as e:
-    #  pass
 
+
+  def GetExternalAPIResponse(self, url):
+    try:
+      response = urllib2.urlopen(url)
+      rsp_from_external_api = json.loads(response.read())
+    except urllib2.URLError as e:
+      if hasattr(e, "code"):  # HTTPError
+        if e.code == 500:
+          raise exceptions.ServerNotAvailableException(e.message)
+      elif hasattr(e, "reason"):  # URLError
+        raise exceptions.UnknownException(e.reason)
+
+    return rsp_from_external_api
 
   def __del__(self):
     pass

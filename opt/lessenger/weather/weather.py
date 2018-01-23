@@ -5,6 +5,7 @@ import cgi
 
 from common.base import Base
 from string import Template
+from common import exceptions
 
 class Weather(Base):
 
@@ -17,55 +18,66 @@ class Weather(Base):
 
   def ProcessClientRequest(self, environ):
     form_data = self.GetFormData(environ, "/Weather")
+    location = form_data.get("location")
+    
+    if not location:
+     raise exceptions.BadQueryException("'location' parameter not available in the weather request.")
 
     # Call the Google Geocoding API.
-
-    location = form_data["location"]
-
     quoted_query = urllib.quote(location.lower())
     url = self.geocoding_api_url %(quoted_query, self.geocoding_api_key)
 
-    response = urllib2.urlopen(url)
-    rsp_from_google_api = json.loads(response.read())
+    response = self.GetExternalAPIResponse(url)
 
     # Retrieve the coordinates from the response.
-    formatted_address = rsp_from_google_api["results"][0]["formatted_address"]
-    latitude = rsp_from_google_api["results"][0]["geometry"]["location"]["lat"]
-    longitude = rsp_from_google_api["results"][0]["geometry"]["location"]["lng"]
+    try:
+      formatted_address = response["results"][0]["formatted_address"]
+      latitude = response["results"][0]["geometry"]["location"]["lat"]
+      longitude = response["results"][0]["geometry"]["location"]["lng"]
+    except Exception as e:
+      raise exceptions.InvalidJSONFromAPIException("Invalid JSON received from Google Geocoder API.")
+
     
+
     # Get the weather from Datasky API.
     url = self.datasky_api_url %(self.datasky_api_key, latitude, longitude)
+    response = self.GetExternalAPIResponse(url)
 
-    response = urllib2.urlopen(url)
-    rsp_from_datasky_api = json.loads(response.read())
-
-    temperature = rsp_from_datasky_api["currently"]["temperature"]
-    summary = rsp_from_datasky_api["currently"]["summary"]
+    try:
+      temperature = response["currently"]["temperature"]
+      summary = response["currently"]["summary"]
+    except Exception as e:
+      raise exceptions.InvalidJSONFromAPIException("Invalid JSON received from Datasky API.")
 
     forecast = "Currently it's %s F, %s." % (temperature, summary)
 
     return forecast
 
   def __call__(self, environ, start_response):
-     status = '200 OK'
+    try:
+      status = "200 OK"
 
-     # Retrieve user input from POST request.
-     output = self.ProcessClientRequest(environ)
+      # Retrieve user input from POST request.
+      output = self.ProcessClientRequest(environ)
+    except exceptions.InvalidJSONFromAPIException as e:
+      status = "204 No Content"
+      output = e.message
+    except exceptions.BadQueryException as e:
+      status = "400 Bad Request"
+      output = e.message
 
-     rsp_format = {
-                    "message" : output
-                  }
+    rsp_format = {
+                   "message" : output
+                 }
 
-     json_rsp_local = urllib.urlencode({"json": json.dumps(rsp_format)})
+    json_rsp_local = urllib.urlencode({"json": json.dumps(rsp_format)})
+    headers = [
+                ("Content-Type", "application/json"),
+                ("Content-Length", "%s" %(str(len(json_rsp_local))))
+              ]
 
-     headers = [
-                 ('Content-Type', 'application/json'),
-                 ('Content-Length', '%s' %(str(len(json_rsp_local))))
-               ]
-
-     start_response(status, headers)
-
-     return [json_rsp_local]
+    start_response(status, headers)
+    return [json_rsp_local]
 
   def __del__(self):
     pass

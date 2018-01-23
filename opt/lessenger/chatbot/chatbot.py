@@ -111,13 +111,16 @@ class ChatBot(Base):
       status = "400 Bad Request"
       rsp_msg_local = self.rsp_msg_template.substitute(
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
-      print "IN BAD QUERY EXCEPTION"
     except exceptions.UnsupportedMediaTypeException as e:
       status = "415 Unsupported Media Type"
       rsp_msg_local = self.rsp_msg_template.substitute(
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
     except exceptions.InvalidJSONFromAPIException as e:
       status = "204 No Content"
+      rsp_msg_local = self.rsp_msg_template.substitute(
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+    except (exceptions.ServerNotAvailableException, exceptions.UnknownException) as e:
+      status = "500 Internal Server Error"
       rsp_msg_local = self.rsp_msg_template.substitute(
         TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
 

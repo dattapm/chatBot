@@ -11,6 +11,7 @@ class Welcome(Base):
   def ProcessClientRequest(self, environ):
     form_data = self.GetFormData(environ, "/Welcome")
     name = form_data.get("name")
+
     if not name:
       raise exceptions.BadQueryException("'name' parameter not available in the welcome request.")
 
