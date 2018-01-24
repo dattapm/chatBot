@@ -12,7 +12,7 @@ class Base(object):
   def __init__(self):
     self.server_url = "http://localhost:9000"
     self.api_headers = {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json;charset=UTF-8'
                        }
 
     #logging.config.fileConfig("/opt/lessenger/conf/logging.conf", disable_existing_loggers=False)
@@ -57,37 +57,54 @@ class Base(object):
       request = urllib2.Request(url, data, self.api_headers)
       response = urllib2.urlopen(request)
 
+      print "DATTA:1 RSP CODE IS:",response.getcode()
       if response.getcode() == 204:
         raise exceptions.InvalidJSONFromAPIException("Invalid JSON message received by '%s' API." %(api_name))
       elif response.getcode() == 200:
         response = json.loads(cgi.parse_qs(response.read())["json"][0])
 
+        print "DATTA:2 RSP CODE IS:",response
         # Check if the response from the API is valid.
         response_from_api = response.get("message")
+        print "DATTA:3 RSP CODE IS:",response_from_api
         if not response or not response_from_api:
           raise exceptions.InvalidJSONFromAPIException("Invalid response received from %s API." %(api_name))
 
         return response_from_api
+      else:
+        print "DATTA API ERROR RSP CODE IS: ",response.getcode()
+
     except urllib2.URLError as e:
+      response = json.loads(cgi.parse_qs(e.read())["json"][0])
       if hasattr(e, "code"):  # HTTPError
         if e.code == 500:
-          raise exceptions.ServerNotAvailableException(e.message)
+          raise exceptions.ServerNotAvailableException(response.get("message"))
+        elif e.code == 400:
+          raise exceptions.BadQueryException(response.get("message"))
       elif hasattr(e, "reason"):  # URLError
         raise exceptions.UnknownException(e.reason)
 
-      response = json.loads(cgi.parse_qs(e.read())["json"][0])
-      raise exceptions.BadQueryException(response.get("message"))
+
+      print "DATTA: IN URL ERROR",response
+
 
 
   def GetExternalAPIResponse(self, url):
     try:
       response = urllib2.urlopen(url)
       rsp_from_external_api = json.loads(response.read())
+
     except urllib2.URLError as e:
+      response = json.loads(e.read())
+      print "DATTA: ERROR FROM API:",response
       if hasattr(e, "code"):  # HTTPError
+        print "DATTA: HTTP ERROR FROM API:",e
         if e.code == 500:
-          raise exceptions.ServerNotAvailableException(e.message)
+          raise exceptions.ServerNotAvailableException(response.get("error_message"))
+        elif e.code == 400:
+          raise exceptions.BadQueryException(response.get("error_message"))
       elif hasattr(e, "reason"):  # URLError
+        print "DATTA: URL ERROR FROM API:",e
         raise exceptions.UnknownException(e.reason)
 
     return rsp_from_external_api

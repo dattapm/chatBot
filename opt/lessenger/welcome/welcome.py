@@ -42,6 +42,7 @@ class Welcome(Base):
                  "message": output
                }
 
+    print "DATTA: WELCOME API RSP",response
     json_rsp_local = urllib.urlencode({"json": json.dumps(response)})
     headers = [
                 ('Content-Type', 'application/json'),

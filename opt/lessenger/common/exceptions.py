@@ -84,6 +84,13 @@ class ServerNotAvailableException(Error):
   def __str__(self):
     return self.ToString("ServerNotAvailableException")
 
+# ExternalAPIException errors.
+class ExternalAPIException(Error):
+  """ExternalAPIException error."""
+
+  def __str__(self):
+    return self.ToString("ExternalAPIException")
+
 # Some unknown errors.
 class UnknownException(Error):
   """UnknownException error."""

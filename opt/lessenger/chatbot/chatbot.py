@@ -121,26 +121,27 @@ class ChatBot(Base):
       # Retrieve user input from POST request.
       status = "200 OK"
       output = self.ProcessClientRequest(environ)
+      print "DATTA: CHATBOT 200 OK",output
       rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE=output.encode('utf-8'))
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE=output)
     except (exceptions.BadQueryException, exceptions.HTTPRequestException) as e:
       status = "400 Bad Request"
       rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e.message)
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" % e.message)
     except exceptions.UnsupportedMediaTypeException as e:
       status = "415 Unsupported Media Type"
       rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" % e.message)
     except exceptions.InvalidJSONFromAPIException as e:
       status = "204 No Content"
       rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" % e.message)
     except (exceptions.ServerNotAvailableException, exceptions.UnknownException) as e:
       status = "500 Internal Server Error"
       rsp_msg_local = self.rsp_msg_template.substitute(
-        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" %e)
+        TYPE="text", FORMAT="text", OUTPUT_MESSAGE="ChatBot: %s" % e.message)
 
-    json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local)
+    json_rsp_local = self.json_response_template.substitute(MESSAGES_ARRAY=rsp_msg_local).encode("utf-8")
 
     self.ui_headers.append(('Content-Length',str(len(json_rsp_local))))
     start_response(status, self.ui_headers)

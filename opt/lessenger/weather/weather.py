@@ -29,6 +29,15 @@ class Weather(Base):
 
     response = self.GetExternalAPIResponse(url)
 
+    if len(response.get("results")) == 0:
+      raise exceptions.ExternalAPIException("No results returned from Google Geocoding API for query '%s'." %(quoted_query))
+
+    if response.get("status") != "OK":
+      raise exceptions.ExternalAPIException("Error '%s' received from Google Geocoding API." % response.get("error_message"))
+
+
+    print "DATTA: RSP FROM WEATHER 2",response.get("status")
+
     # Retrieve the coordinates from the response.
     try:
       formatted_address = response["results"][0]["formatted_address"]
@@ -37,17 +46,22 @@ class Weather(Base):
     except Exception as e:
       raise exceptions.InvalidJSONFromAPIException("Invalid JSON received from Google Geocoder API.")
 
-    
+    if not latitude or not longitude:
+      raise exceptions.InvalidJSONFromAPIException("latitude or longitude not received from Google Geocoder API for user query '%s'." %(quoted_query))
 
     # Get the weather from Datasky API.
     url = self.datasky_api_url %(self.datasky_api_key, latitude, longitude)
     response = self.GetExternalAPIResponse(url)
+    print "DATTA: RSP FROM WEATHER DATASKY:",url,latitude, longitude
 
     try:
       temperature = response["currently"]["temperature"]
       summary = response["currently"]["summary"]
     except Exception as e:
       raise exceptions.InvalidJSONFromAPIException("Invalid JSON received from Datasky API.")
+
+    if not temperature or not summary:
+      raise exceptions.InvalidJSONFromAPIException("forecast information not received from Datasky API.")
 
     forecast = "Currently it's %s F, %s." % (temperature, summary)
 
@@ -64,6 +78,10 @@ class Weather(Base):
       output = e.message
     except exceptions.BadQueryException as e:
       status = "400 Bad Request"
+      output = e.message
+    except exceptions.ExternalAPIException as e:
+      print "DATTA WEATHER API EXCEPTION"
+      status = "500 Internal Server Error"
       output = e.message
 
     rsp_format = {
