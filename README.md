@@ -56,6 +56,77 @@ Block Diagram of the entities running in the backend:
 -----------------------------------------------------    
 
 
+
+JSON format exchanged between ChatBot and Welcome/ Weather APIs:
+---------------------------------------------------------------
+
+The JSON format being exchanged from ChatBot service to Welcome API is as below:
+
+   {
+
+         "json" : {
+  
+                      "name" : name,
+              
+                      "action" : action,
+              
+                      "user_id" : user_id
+              
+                   }
+           
+   }
+
+The JSON format being exchanged from Welcome API to ChatBot service is as below:
+
+   {
+
+         "json" : {
+   
+                      "message" : output
+               
+                  }
+            
+   }
+
+The JSON format being exchanged from ChatBot service to Weather API is as below:
+
+   {
+
+         "json": {
+   
+                      "location" : location,
+               
+                      "action" : action,
+               
+                      "user_id" : user_id
+               
+                 }
+           
+    }
+ 
+ The JSON format being exchanged from Weather API to ChatBot service is as below:
+ 
+    {
+ 
+         "json" : {
+   
+                       "message" : output
+               
+                  }
+            
+    }
+
+Here, "output" is the text that is displayed on the lessenger UI.
+ 
+Error/ Exception handling:
+--------------------------
+
+Depending on the requirement, the below exceptions have been customized to reflect the type of issue handled.
+
+1. 
+
+
+
 Technology stack used:                                                                      
 ----------------------
 The software in this repository has been tested for the following requirements.
