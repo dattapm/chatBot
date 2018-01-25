@@ -1,0 +1,24 @@
+
+```mermaid
+graph LR
+A[lessenger UI] 
+B[Apache web server]
+C[WSGI]
+D[ChatBot service]
+E[Welcome API]
+F[Weather API]
+G[Google Geocoding API]
+H[Datasky API]
+
+A --> B
+B --> C
+C --> D
+D -- HTTP/ application/json --> E
+D --> F
+F --> G
+F --> H
+
+``'
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbMTM5OTM3MjUzNl19
+-->
