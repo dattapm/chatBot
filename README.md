@@ -21,17 +21,22 @@ Technical requirements to run the backend server:
 2. Install mod_wsgi and configure it to use the web server above.
 3. Download the github repository. This should copy all the folders/ files into the path "/opt/lessenger/ locally.
 4. Make sure you have the required permissions to execute the python modules(usually a 755 will do).
-5. Add "/opt/lessenger/conf/lessenger.conf" to the httpd.conf, as a 'conf' fle which needs to be run by the Apache 
-server.
-6. The above lessenger.conf file contains settings to listen to port 9000 and process the HTTP requests arriving at this port.
+5. Add "/opt/lessenger/conf/lessenger.conf" to the httpd.conf, as a 'conf' fle which needs to be run by the 
+   Apache server.
+6. The above lessenger.conf file contains settings to listen to port 9000 and process the HTTP requests arriving at 
+   this port.
 7. Restart the web server.
 8. If all the permissions look good, then the lessenger UI should be able to contact the backend WSGI applications. 
 9. Try to enter a name and expect the server to respond back with a "Hello, <name>"
 10. Then enter location details to get the forecast information.
 
-Technology stack used:
-----------------------
 
+Block Diagram of the entities running in the backend:                 
+-----------------------------------------------------    
+
+
+Technology stack used:                                                                      
+----------------------
 The software in this repository has been tested for the following requirements.
 
 1. Python version is 2.x(2.7.5)
