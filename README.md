@@ -122,17 +122,44 @@ Error/ Exception handling:
 --------------------------
 
 Depending on the requirement, the below exceptions have been customized to reflect the type of issue handled.
+```
+1. BadQueryException: 
 
-1. 
+      Raised when the inputs received by the API are not as per the requirements.
+     
+2. HTTPRequestException:
 
+     Raised when proper inputs are not received in the HTTP request.
+     
+3. UnsupportedMediaTypeException:
 
+     Raised when the Content-Type received in the HTTP request is not supported by the backend.
+     
+4. ServerNotAvailableException:
+
+     Raised when the server hosting the ChatBot service or private APIs(Welcome and Weather) or public APIs
+     (Google Geocoding and Datasky APIs) are not reachable.
+     
+5. validJSONFromAPIException:
+
+     Raised when the JSON request/ response is not as per the format expected.
+     
+6. ExternalAPIException:
+
+     Raised when the information exchange between the Weather API and the public APIs(Google Geocoding and Datasky APIs)
+     are not as expected.
+     
+6. UnknownException:
+
+     Raised for any other exception not handled in the above scenarios.
+```
 
 Technology stack used:                                                                      
 ----------------------
-The software in this repository has been tested for the following requirements.
+The software in this repository has been tested for the below environment.
 
 1. Python version is 2.x(2.7.5)
-2. This code has been tested for proper functioning on Ubuntu 16.04.2 LTS.
+2. Ubuntu 16.04.2 LTS.
 3. The frontend has been tested for proper functioning on Chrome and FireFox browsers.
 
 Isssues found with the lessenger UI:
