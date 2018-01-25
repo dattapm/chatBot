@@ -19,16 +19,18 @@ Technical requirements to run the backend server:
 
 1. Install Apache web server and configure it to run at port 9000 on the localhost.
 2. Install mod_wsgi and configure it to use the web server above.
-3. Download the github repository. This should copy all the folders/ files into the path "/opt/lessenger/ locally.
-4. Make sure you have the required permissions to execute the python modules(usually a 755 will do).
-5. Add "/opt/lessenger/conf/lessenger.conf" to the httpd.conf, as a 'conf' fle which needs to be run by the 
+3. Make sure you have Python 2.x installed in the standard path(usually /usr).
+4. Download the github repository. This should copy all the folders/ files into the path "/opt/lessenger/ locally.
+5. Make sure you have the required permissions to execute the python modules(usually a 755 will do).
+6. Add "/opt/lessenger/conf/lessenger.conf" to the httpd.conf, as a 'conf' fle which needs to be run by the 
    Apache server.
-6. The above lessenger.conf file contains settings to listen to port 9000 and process the HTTP requests arriving at 
+7. The above lessenger.conf file contains settings to listen to port 9000 and process the HTTP requests arriving at 
    this port.
-7. Restart the web server.
-8. If all the permissions look good, then the lessenger UI should be able to contact the backend WSGI applications. 
-9. Try to enter a name and expect the server to respond back with a "Hello, \<name\>"
-10. Then enter location details to get the forecast information.
+8. For simplicity, you can host the service and the APIs on the same server, namely localhost.   
+9. Restart the web server.
+10. If all the permissions look good, then the lessenger UI should be able to contact the backend WSGI applications. 
+11. Try to enter a name and expect the server to respond back with a "Hello, \<name\>"
+12. Then enter location details to get the forecast information.
 
 Insight into the backend design:
 ---------------------------------
@@ -56,6 +58,23 @@ Block Diagram of the entities running in the backend:
 -----------------------------------------------------    
 
 ![alt text](https://raw.githubusercontent.com/dattapm/lessenger/master/opt/lessenger/common/lessenger_diagram.png)
+
+
+Files in the repositiory:
+--------------------------
+
+1. /opt/lessenger/chatbot/chatbot.py: This module has the implementation for the ChatBot service. This modules handles the interaction between lessenger UI and the Welcome and Weather APIs. It handles all the errors/ exceptions too.
+
+2. /opt/lessenger/welcome/welcome.py: This module has the implementation for the Welcome API. It interacts with the ChatBot service.
+
+3. /opt/lessenger/weather/weather.py: This module has the implementation for the Weather API. It interacts with the ChatBot service on one hand and the public APIs(Google Geocoding and Datasky) on the other hand.
+
+4. /opt/lessenger/common/base.py: This module has the implementation for the base class, which is inherited in all the above modules. This has code for sending/ receiving the HTTP requests, encoding/ decoding the JSON messages and handling the communication errors.
+
+5. /opt/lessenger/common/exceptions.py: Customized exceptions have been added to this module.
+
+6. /opt/lessenger/wsgi-bin/{chatbot.wsgi, welcome.wsgi, weather.wsgi}: These are WSGI application which launch the above modules.
+
 
 JSON format exchanged between ChatBot and Welcome/ Weather APIs:
 ---------------------------------------------------------------
