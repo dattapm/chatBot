@@ -30,6 +30,27 @@ Technical requirements to run the backend server:
 9. Try to enter a name and expect the server to respond back with a "Hello, <name>"
 10. Then enter location details to get the forecast information.
 
+Insight into the backend design:
+---------------------------------
+Backend has been designed to have a service 'ChatBot' running at port 9000 and two APIs, namely 'Welcome' and 'Weather', which run at '/Welcome' and '/Weather' respectively.
+
+'ChatBot' interacts with the two APIs over HTTP with JSON as the message format. More details of the message format have been provided in the same document.
+
+'/Welcome' API takes a name and returns a welcome message to be displayed on the lessenger UI.
+
+'/Weather' API takes a location parameter and internally calls two public APIs(Google Geocoding and Datasky APIs) to get the latitude/ longitude and weather forecast respectively.
+
+Advantages of having 'Welcome' and 'Weather' as two APIs:
+---------------------------------------------------------
+The functionality of sending the welcome message and weather forecast could have been in-built along with the ChatBot service, but there are advantages of running them as APIs, as mentioned below:
+
+1. The two APIs could be hosted on different servers as required by the system requirements. Since the ChatBot service
+   interacts with the APIs over HTTP, they could be communicated across the network.
+2. The technology stack of the APIs could be different, as demanded by the project requirements. Since the message
+   exchange is happening over HTTP with JSON, it is enough that the message exchange happens in JSON.
+3. The two APIs could be managed, maintained and evolved by different people, thus making it developer-independent.  
+
+
 
 Block Diagram of the entities running in the backend:                 
 -----------------------------------------------------    
