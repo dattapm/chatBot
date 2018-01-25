@@ -27,7 +27,7 @@ Technical requirements to run the backend server:
    this port.
 7. Restart the web server.
 8. If all the permissions look good, then the lessenger UI should be able to contact the backend WSGI applications. 
-9. Try to enter a name and expect the server to respond back with a "Hello, <name>"
+9. Try to enter a name and expect the server to respond back with a "Hello, \<name\>"
 10. Then enter location details to get the forecast information.
 
 Insight into the backend design:
@@ -55,7 +55,7 @@ The functionality of sending the welcome message and weather forecast could have
 Block Diagram of the entities running in the backend:                 
 -----------------------------------------------------    
 
-
+![alt text](https://raw.githubusercontent.com/dattapm/lessenger/master/opt/lessenger/common/lessenger_diagram.png)
 
 JSON format exchanged between ChatBot and Welcome/ Weather APIs:
 ---------------------------------------------------------------
@@ -149,7 +149,7 @@ Depending on the requirement, the below exceptions have been customized to refle
      Raised when the information exchange between the Weather API and the public APIs(Google Geocoding and Datasky APIs)
      are not as expected.
      
-6. UnknownException:
+7. UnknownException:
 
      Raised for any other exception not handled in the above scenarios.
 ```
